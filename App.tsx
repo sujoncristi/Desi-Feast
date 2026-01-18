@@ -1,22 +1,21 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion as m } from 'framer-motion';
-import { GameState, FoodType, TileData, SpecialEffect, BoosterType, ScoreAnimation } from './types';
-import { FOOD_ITEMS, LEVELS, GRID_SIZE as GS, CREATOR_INFO } from './constants';
-import { initializeBoard, checkMatches, applyGravity, createTile, getRandomFoodType } from './gameLogic';
-import Tile from './components/Tile';
-import ResultOverlay from './components/ResultOverlay';
-import SettingsMenu from './components/SettingsMenu';
-import TutorialOverlay from './components/TutorialOverlay';
-import PauseMenu from './components/PauseMenu';
-import { playPop, playSwap, playSpecial, playWin, playLose, startBackgroundMusic, stopBackgroundMusic } from './utils/sounds';
-import { getAiHint } from './utils/ai';
+import { GameState, FoodType, TileData, SpecialEffect, BoosterType, ScoreAnimation } from './types.ts';
+import { FOOD_ITEMS, LEVELS, GRID_SIZE as GS, CREATOR_INFO } from './constants.tsx';
+import { initializeBoard, checkMatches, applyGravity, createTile, getRandomFoodType } from './gameLogic.ts';
+import Tile from './components/Tile.tsx';
+import ResultOverlay from './components/ResultOverlay.tsx';
+import SettingsMenu from './components/SettingsMenu.tsx';
+import TutorialOverlay from './components/TutorialOverlay.tsx';
+import PauseMenu from './components/PauseMenu.tsx';
+import { playPop, playSwap, playSpecial, playWin, playLose, startBackgroundMusic, stopBackgroundMusic } from './utils/sounds.ts';
+import { getAiHint } from './utils/ai.ts';
 
 const motion = m as any;
 
 const PRAISE_WORDS = ["Shabash!", "Darun!", "Khub Bhalo!", "Chomokdar!", "Delicious!", "Mouthwatering!", "Fatafati!", "Boss Style!"];
 
-// Fix for type '() => void' is not assignable to type 'FC<{}>' and missing default export
 const App: React.FC = () => {
   const [screen, setScreen] = useState<'START' | 'LEVEL_SELECT' | 'GAME' | 'PAUSE' | 'WIN' | 'LOSE'>('START');
   const [showSettings, setShowSettings] = useState(false);
@@ -52,7 +51,6 @@ const App: React.FC = () => {
 
   const [selectedTile, setSelectedTile] = useState<{ r: number, c: number } | null>(null);
 
-  // Background music management
   useEffect(() => {
     if (gameState.settings.musicEnabled && (screen === 'GAME' || screen === 'START')) {
       startBackgroundMusic();
@@ -61,7 +59,6 @@ const App: React.FC = () => {
     }
   }, [gameState.settings.musicEnabled, screen]);
 
-  // Persistence
   useEffect(() => {
     localStorage.setItem('desiCrushSettings', JSON.stringify(gameState.settings));
     localStorage.setItem('desiCrushBoosters', JSON.stringify(gameState.boosters));

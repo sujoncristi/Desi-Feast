@@ -1,6 +1,6 @@
 
-import { FoodType, TileData, SpecialEffect } from './types';
-import { FOOD_ITEMS, GRID_SIZE } from './constants';
+import { FoodType, TileData, SpecialEffect } from './types.ts';
+import { FOOD_ITEMS, GRID_SIZE } from './constants.tsx';
 
 export const createTile = (type: FoodType, special: SpecialEffect = SpecialEffect.NONE, locked: boolean = false): TileData => ({
   id: Math.random().toString(36).substr(2, 9),
