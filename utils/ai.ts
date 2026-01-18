@@ -1,10 +1,16 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { TileData } from "../types.ts";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Prevent errors if API_KEY is missing during initialization
+const API_KEY = process.env.API_KEY || "";
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 export async function getAiHint(board: (TileData | null)[][]): Promise<{ r1: number, c1: number, r2: number, c2: number, comment: string } | null> {
+  if (!API_KEY) {
+    console.warn("AI Hint requested but API_KEY is missing.");
+    return null;
+  }
+
   const boardSnapshot = board.map((row, r) => row.map((tile, c) => ({
       type: tile?.type || 'EMPTY',
       locked: tile?.locked || false,

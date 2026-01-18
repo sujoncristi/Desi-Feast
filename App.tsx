@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion as m } from 'framer-motion';
 import { GameState, FoodType, TileData, SpecialEffect, BoosterType, ScoreAnimation, DailyStreakData } from './types.ts';
@@ -17,6 +16,16 @@ const motion = m as any;
 
 const PRAISE_WORDS = ["Shabash!", "Darun!", "Khub Bhalo!", "Chomokdar!", "Delicious!", "Mouthwatering!", "Fatafati!", "Boss Style!"];
 
+const safeParse = (key: string, defaultValue: any) => {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch (e) {
+    console.error(`Error parsing localStorage key "${key}":`, e);
+    return defaultValue;
+  }
+};
+
 const App: React.FC = () => {
   const [screen, setScreen] = useState<'START' | 'LEVEL_SELECT' | 'GAME' | 'PAUSE' | 'WIN' | 'LOSE'>('START');
   const [showSettings, setShowSettings] = useState(false);
@@ -31,15 +40,13 @@ const App: React.FC = () => {
   
   const [gameState, setGameState] = useState<GameState>(() => {
     const savedUnlocked = localStorage.getItem('desiCrushUnlocked');
-    const savedSettings = localStorage.getItem('desiCrushSettings');
-    const savedBoosters = localStorage.getItem('desiCrushBoosters');
-    const savedStreak = localStorage.getItem('desiCrushDailyStreak');
-    
-    const defaultStreak: DailyStreakData = {
+    const savedSettings = safeParse('desiCrushSettings', { soundEnabled: true, musicEnabled: true });
+    const savedBoosters = safeParse('desiCrushBoosters', { HAMMER: 3, SHUFFLE: 2, ROW_CLEAR: 1 });
+    const savedStreak = safeParse('desiCrushDailyStreak', {
       streak: 0,
       lastLogin: '',
       hasClaimedToday: false
-    };
+    });
 
     return {
       currentLevel: 1,
@@ -50,12 +57,12 @@ const App: React.FC = () => {
       isAnimating: false,
       collected: {} as Record<string, number>,
       unlockedLevels: savedUnlocked ? Number(savedUnlocked) : 1,
-      settings: savedSettings ? JSON.parse(savedSettings) : { soundEnabled: true, musicEnabled: true },
+      settings: savedSettings,
       aiHint: null,
       activeBooster: null,
-      boosters: savedBoosters ? JSON.parse(savedBoosters) : { HAMMER: 3, SHUFFLE: 2, ROW_CLEAR: 1 },
+      boosters: savedBoosters,
       streak: 0,
-      dailyStreak: savedStreak ? JSON.parse(savedStreak) : defaultStreak
+      dailyStreak: savedStreak
     };
   });
 
