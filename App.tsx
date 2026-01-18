@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion as m } from 'framer-motion';
-import { GameState, FoodType, TileData, SpecialEffect, BoosterType, ScoreAnimation } from './types.ts';
+import { GameState, FoodType, TileData, SpecialEffect, BoosterType, ScoreAnimation, DailyStreakData } from './types.ts';
 import { FOOD_ITEMS, LEVELS, GRID_SIZE as GS, CREATOR_INFO } from './constants.tsx';
 import { initializeBoard, checkMatches, applyGravity, createTile, getRandomFoodType } from './gameLogic.ts';
 import Tile from './components/Tile.tsx';
@@ -9,6 +9,7 @@ import ResultOverlay from './components/ResultOverlay.tsx';
 import SettingsMenu from './components/SettingsMenu.tsx';
 import TutorialOverlay from './components/TutorialOverlay.tsx';
 import PauseMenu from './components/PauseMenu.tsx';
+import DailyRewardOverlay from './components/DailyRewardOverlay.tsx';
 import { playPop, playSwap, playSpecial, playWin, playLose, startBackgroundMusic, stopBackgroundMusic } from './utils/sounds.ts';
 import { getAiHint } from './utils/ai.ts';
 
@@ -20,6 +21,7 @@ const App: React.FC = () => {
   const [screen, setScreen] = useState<'START' | 'LEVEL_SELECT' | 'GAME' | 'PAUSE' | 'WIN' | 'LOSE'>('START');
   const [showSettings, setShowSettings] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showDailyReward, setShowDailyReward] = useState(false);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [aiComment, setAiComment] = useState<string | null>(null);
   const [stars, setStars] = useState(0);
@@ -31,7 +33,14 @@ const App: React.FC = () => {
     const savedUnlocked = localStorage.getItem('desiCrushUnlocked');
     const savedSettings = localStorage.getItem('desiCrushSettings');
     const savedBoosters = localStorage.getItem('desiCrushBoosters');
+    const savedStreak = localStorage.getItem('desiCrushDailyStreak');
     
+    const defaultStreak: DailyStreakData = {
+      streak: 0,
+      lastLogin: '',
+      hasClaimedToday: false
+    };
+
     return {
       currentLevel: 1,
       score: 0,
@@ -45,11 +54,42 @@ const App: React.FC = () => {
       aiHint: null,
       activeBooster: null,
       boosters: savedBoosters ? JSON.parse(savedBoosters) : { HAMMER: 3, SHUFFLE: 2, ROW_CLEAR: 1 },
-      streak: 0
+      streak: 0,
+      dailyStreak: savedStreak ? JSON.parse(savedStreak) : defaultStreak
     };
   });
 
   const [selectedTile, setSelectedTile] = useState<{ r: number, c: number } | null>(null);
+
+  // Daily Streak Check
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const lastLogin = gameState.dailyStreak.lastLogin;
+    
+    if (lastLogin !== today) {
+      let newStreak = 1;
+      if (lastLogin) {
+        const lastDate = new Date(lastLogin);
+        const currentDate = new Date(today);
+        const diffTime = Math.abs(currentDate.getTime() - lastDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 1) {
+          newStreak = gameState.dailyStreak.streak + 1;
+        }
+      }
+
+      setGameState(prev => ({
+        ...prev,
+        dailyStreak: {
+          streak: newStreak,
+          lastLogin: today,
+          hasClaimedToday: false
+        }
+      }));
+      setShowDailyReward(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (gameState.settings.musicEnabled && (screen === 'GAME' || screen === 'START')) {
@@ -63,11 +103,28 @@ const App: React.FC = () => {
     localStorage.setItem('desiCrushSettings', JSON.stringify(gameState.settings));
     localStorage.setItem('desiCrushBoosters', JSON.stringify(gameState.boosters));
     localStorage.setItem('desiCrushUnlocked', gameState.unlockedLevels.toString());
-  }, [gameState.settings, gameState.boosters, gameState.unlockedLevels]);
+    localStorage.setItem('desiCrushDailyStreak', JSON.stringify(gameState.dailyStreak));
+  }, [gameState.settings, gameState.boosters, gameState.unlockedLevels, gameState.dailyStreak]);
 
   const sound = useCallback((fn: () => void) => {
     if (gameState.settings.soundEnabled) fn();
   }, [gameState.settings.soundEnabled]);
+
+  const claimDailyReward = (booster: BoosterType, amount: number) => {
+    setGameState(prev => ({
+      ...prev,
+      boosters: {
+        ...prev.boosters,
+        [booster]: prev.boosters[booster] + amount
+      },
+      dailyStreak: {
+        ...prev.dailyStreak,
+        hasClaimedToday: true
+      }
+    }));
+    setShowDailyReward(false);
+    sound(playSpecial);
+  };
 
   const addScorePopup = (r: number, c: number, value: number) => {
     const id = Date.now() + Math.random();
@@ -258,7 +315,7 @@ const App: React.FC = () => {
               transition={{ repeat: Infinity, duration: 3 }}
               className="mb-8"
             >
-              <h1 className="text-7xl font-black text-orange-950 font-bubbly drop-shadow-xl mb-2">Desi Crush</h1>
+              <h1 className="text-7xl font-black text-orange-950 font-bubbly drop-shadow-xl mb-2">Desi Feast</h1>
               <div className="text-xl font-bold text-pink-500 uppercase tracking-widest">Dadi's Special Recipe</div>
             </motion.div>
             
@@ -460,6 +517,15 @@ const App: React.FC = () => {
             actionText="TRY AGAIN" 
             score={gameState.score} 
             success={false}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showDailyReward && (
+          <DailyRewardOverlay 
+            streak={gameState.dailyStreak.streak} 
+            onClaim={claimDailyReward}
           />
         )}
       </AnimatePresence>

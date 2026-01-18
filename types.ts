@@ -44,6 +44,12 @@ export interface ScoreAnimation {
   value: number;
 }
 
+export interface DailyStreakData {
+  streak: number;
+  lastLogin: string; // YYYY-MM-DD
+  hasClaimedToday: boolean;
+}
+
 export interface GameState {
   currentLevel: number;
   score: number;
@@ -58,4 +64,5 @@ export interface GameState {
   activeBooster: BoosterType | null;
   boosters: Record<BoosterType, number>;
   streak: number;
+  dailyStreak: DailyStreakData;
 }
